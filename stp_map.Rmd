@@ -1,0 +1,44 @@
+---
+title: "St. Paul"
+author: "Put your name here"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(sf)
+library(osmdata)
+```
+
+```{r}
+place <- "saint paul, Minnesota"
+
+stp_streets <- opq(place) %>%
+  add_osm_feature(key = "highway") %>%
+  osmdata_sf() %>% 
+  .$osm_lines
+
+boundary <- opq(place) %>%
+  add_osm_feature(key = "boundary", 
+                  value = c("administrative")) %>%
+  osmdata_sf() %>%   
+  unname_osmdata_sf() %>% 
+  .$osm_multipolygons %>% 
+  filter(name %in% c("St. Paul"))
+
+streets_cropped <- stp_streets %>% 
+  st_intersection(boundary)
+
+# ggplot(data = boundary) + 
+#   geom_sf()
+
+ggplot() +
+  geom_sf(data = boundary) +
+  geom_sf(data = streets_cropped)
+
+```
+
