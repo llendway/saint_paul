@@ -12,7 +12,24 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(sf)
 library(osmdata)
+library(ggthemes)
+library(showtext)
 ```
+
+```{r, eval=FALSE}
+#fonts()
+#fonttable()
+#font_import()
+
+#loadfonts(device = "win")
+```
+
+```{r}
+font_add_google(name = "Cinzel Decorative", 
+                family = "cinzel")
+showtext_auto()
+```
+
 
 ```{r}
 place <- "saint paul, Minnesota"
@@ -37,8 +54,18 @@ streets_cropped <- stp_streets %>%
 #   geom_sf()
 
 ggplot() +
-  geom_sf(data = boundary) +
-  geom_sf(data = streets_cropped)
+  # geom_sf(data = boundary, 
+  #         color = NULL) +
+  geom_sf(data = streets_cropped,
+          size = .2,
+          color = "darkgray") +
+  labs(title = "ST. PAUL") +
+  theme_map() +
+  theme(plot.title = element_text(family = "cinzel",
+                                  size = 30, 
+                                  hjust = .5),
+        plot.title.position = "plot",
+        plot.background = element_rect(fill = "#faf8ed"))
 
 ```
 
