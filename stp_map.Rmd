@@ -37,7 +37,28 @@ place <- "saint paul, Minnesota"
 stp_streets <- opq(place) %>%
   add_osm_feature(key = "highway") %>%
   osmdata_sf() %>% 
-  .$osm_lines
+  .$osm_lines %>% 
+  select(osm_id, 
+         name, 
+         highway, 
+         maxspeed, 
+         oneway, 
+         surface) %>% 
+  mutate(hwy_grp = case_when(
+    highway %in% c("motorway",
+                   "motorway_link",
+                   "primary",
+                   "primary_link") ~ "large",
+    highway %in% c("secondary",
+                   "secondary_link",
+                   "tertiary",
+                   "tertiary_link") ~ "medium",
+    highway %in% c("residential",
+                   "living_street", 
+                   "unclassified", 
+                   "service", 
+                   "footway") ~ "small",
+    TRUE ~ "other"))
 
 boundary <- opq(place) %>%
   add_osm_feature(key = "boundary", 
@@ -53,19 +74,66 @@ streets_cropped <- stp_streets %>%
 # ggplot(data = boundary) + 
 #   geom_sf()
 
+water_osm <- opq(place) %>%
+  add_osm_feature(key = "natural", value = "water") %>%
+  # add_osm_feature(key = "water", value = c("lake", "river", "pond")) %>%
+  osmdata_sf() %>% 
+  unname_osmdata_sf() %>% 
+  .$osm_multipolygons %>% 
+  st_intersection(boundary)
+
+# river_osm <- opq(place) %>%
+#   add_osm_feature(key = "waterway", value = c("river", "riverbank")) %>%
+#   osmdata_sf() %>% 
+#   unname_osmdata_sf()
+```
+
+
+```{r}
+my_stp <- 
 ggplot() +
   # geom_sf(data = boundary, 
   #         color = NULL) +
-  geom_sf(data = streets_cropped,
-          size = .2,
-          color = "darkgray") +
+  # geom_sf(data = streets_cropped,
+  #         size = .2,
+  #         color = "darkgray") +
+  geom_sf(data = water_osm,
+          fill = "steelblue",
+          # size = .8,
+          lwd = 0,
+          alpha = .3) +
+  geom_sf(data = streets_cropped %>% 
+            filter(hwy_grp == "small"),
+          size = .1,
+          color = "grey40") +
+  geom_sf(data = streets_cropped %>% 
+            filter(hwy_grp == "medium"),
+          size = .3,
+          color = "grey35") +
+  geom_sf(data = streets_cropped %>% 
+            filter(hwy_grp == "large"),
+          size = .5,
+          color = "grey30") +
+  geom_point(data = tibble(Long = -93.1405743,
+                           Lat = 44.9505722),
+             aes(x = Long, y = Lat),
+             shape = 18,
+             color = "darkred") +
   labs(title = "ST. PAUL") +
   theme_map() +
   theme(plot.title = element_text(family = "cinzel",
-                                  size = 30, 
+                                  size = 80, 
                                   hjust = .5),
         plot.title.position = "plot",
-        plot.background = element_rect(fill = "#faf8ed"))
+        plot.background = element_rect(fill = "#faf8ed", 
+                                       color = "#faf8ed"))
+
+ggsave("stp_map.png",
+       plot=my_stp, 
+       width = 350, 
+       height = 350, 
+       units = "mm", 
+       dpi = "retina")
 
 ```
 
